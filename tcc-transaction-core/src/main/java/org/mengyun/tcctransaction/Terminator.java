@@ -18,6 +18,11 @@ public class Terminator implements Serializable {
     public Terminator() {
     }
 
+    /**
+     * 根据调用上下文，获取目标方法并执行方法调用.
+     * @param invocationContext
+     * @return
+     */
     public Object invoke(TransactionContext transactionContext, InvocationContext invocationContext, Class<? extends TransactionContextEditor> transactionContextEditorClass) {
         if (StringUtils.isNotEmpty(invocationContext.getMethodName())) {
             try {

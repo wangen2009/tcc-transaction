@@ -8,17 +8,17 @@ package org.mengyun.tcctransaction.common;
 public enum  MethodType {
 
     /**
-     * ROOT
+     * 根
      */
     ROOT,
     @Deprecated
     CONSUMER,
     /**
-     * PROVIDER
+     * 提供者
      */
     PROVIDER,
     /**
-     * NORMAL
+     * 常规
      */
     NORMAL
 }

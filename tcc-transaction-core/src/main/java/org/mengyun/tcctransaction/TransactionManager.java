@@ -31,7 +31,7 @@ public class TransactionManager {
     }
 
     /**
-     * 发起根事务
+     * 事务开始（创建事务日志记录，并将该事务日志记录存入当前线程的事务局部变量中）
      *
      * @return 事务
      */
@@ -39,14 +39,14 @@ public class TransactionManager {
         // 创建 根事务
         Transaction transaction = new Transaction(TransactionType.ROOT);
         // 存储 事务
-        transactionRepository.create(transaction);
+        transactionRepository.create(transaction);// 创建事务记录,写入事务日志库
         // 注册 事务
         registerTransaction(transaction);
         return transaction;
     }
 
     /**
-     * 传播发起分支事务
+     * 基于全局事务ID扩展创建新的分支事务，并存于当前线程的事务局部变量中.
      *
      * @param transactionContext 事务上下文
      * @return 分支事务
@@ -62,7 +62,7 @@ public class TransactionManager {
     }
 
     /**
-     * 传播获取分支事务
+     * 找出存在的事务并处理
      *
      * @param transactionContext 事务上下文
      * @return 分支事务

@@ -43,6 +43,11 @@ public class CompensableTransactionInterceptor {
         this.delayCancelExceptions = delayCancelExceptions;
     }
 
+    /**
+     * 拦截补偿方法.
+     * @param pjp
+     * @throws Throwable
+     */
     public Object interceptCompensableMethod(ProceedingJoinPoint pjp) throws Throwable {
         // 获得带 @Compensable 注解的方法
         Method method = CompensableMethodUtils.getCompensableMethod(pjp);
@@ -62,23 +67,28 @@ public class CompensableTransactionInterceptor {
         // 处理
         switch (methodType) {
             case ROOT:
-                return rootMethodProceed(pjp);
+                return rootMethodProceed(pjp);// 主事务方法的处理
             case PROVIDER:
-                return providerMethodProceed(pjp, transactionContext);
+                return providerMethodProceed(pjp, transactionContext);// 服务提供者事务方法处理
             default:
-                return pjp.proceed();
+                return pjp.proceed(); // 其他的方法都是直接执行
         }
     }
 
+    /**
+     * 主事务方法的处理.
+     * @param pjp
+     * @throws Throwable
+     */
     private Object rootMethodProceed(ProceedingJoinPoint pjp) throws Throwable {
-        Object returnValue;
+        Object returnValue;// 返回值
         Transaction transaction = null;
         try {
             // 发起根事务
-            transaction = transactionManager.begin();
+            transaction = transactionManager.begin();// 事务开始（创建事务日志记录，并在当前线程缓存该事务日志记录）
             // 执行方法原逻辑
             try {
-                returnValue = pjp.proceed();
+                returnValue = pjp.proceed(); // Try (开始执行被拦截的方法)
             } catch (Throwable tryingException) {
                 if (isDelayCancelException(tryingException)) { // 是否延迟回滚
                 } else {
@@ -89,7 +99,7 @@ public class CompensableTransactionInterceptor {
                 throw tryingException;
             }
             // 提交事务
-            transactionManager.commit();
+            transactionManager.commit(); // Try检验正常后提交(事务管理器在控制提交)
         } finally {
             // 将事务从当前线程事务队列移除
             transactionManager.cleanAfterCompletion(transaction);
@@ -97,17 +107,23 @@ public class CompensableTransactionInterceptor {
         return returnValue;
     }
 
+    /**
+     * 服务提供者事务方法处理.
+     * @param pjp
+     * @param transactionContext
+     * @throws Throwable
+     */
     private Object providerMethodProceed(ProceedingJoinPoint pjp, TransactionContext transactionContext) throws Throwable {
         Transaction transaction = null;
         try {
             switch (TransactionStatus.valueOf(transactionContext.getStatus())) {
                 case TRYING:
-                    // 传播发起分支事务
+                    // 基于全局事务ID扩展创建新的分支事务，并存于当前线程的事务局部变量中.
                     transaction = transactionManager.propagationNewBegin(transactionContext);
                     return pjp.proceed();
                 case CONFIRMING:
                     try {
-                        // 传播获取分支事务
+                        // 找出存在的事务并处理.
                         transaction = transactionManager.propagationExistBegin(transactionContext);
                         // 提交事务
                         transactionManager.commit();

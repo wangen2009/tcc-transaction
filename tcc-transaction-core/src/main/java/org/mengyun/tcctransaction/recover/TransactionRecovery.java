@@ -24,15 +24,15 @@ public class TransactionRecovery {
     static final Logger logger = Logger.getLogger(TransactionRecovery.class.getSimpleName());
 
     /**
-     * 事务配置
+     * TCC事务配置器
      */
     private TransactionConfigurator transactionConfigurator;
 
     /**
-     * 启动恢复事务逻辑
+     * 启动事务恢复操作(被RecoverScheduledJob定时任务调用).
      */
     public void startRecover() {
-        // 加载异常事务集合
+        // 找出所有执行错误的事务信息
         List<Transaction> transactions = loadErrorTransactions();
         // 恢复异常事务集合
         recoverErrorTransactions(transactions);
@@ -77,16 +77,20 @@ public class TransactionRecovery {
                 transaction.addRetriedCount();
                 // Confirm
                 if (transaction.getStatus().equals(TransactionStatus.CONFIRMING)) {
+                    // 如果是CONFIRMING(2)状态，则将事务往前执行
                     transaction.changeStatus(TransactionStatus.CONFIRMING);
                     transactionConfigurator.getTransactionRepository().update(transaction);
                     transaction.commit();
+                    // 其他情况下，超时没处理的事务日志直接删除
                     transactionConfigurator.getTransactionRepository().delete(transaction);
                 // Cancel
                 } else if (transaction.getStatus().equals(TransactionStatus.CANCELLING)
                         || transaction.getTransactionType().equals(TransactionType.ROOT)) { // 处理延迟取消的情况
+                    // 其他情况，把事务状态改为CANCELLING(3)，然后执行回滚
                     transaction.changeStatus(TransactionStatus.CANCELLING);
                     transactionConfigurator.getTransactionRepository().update(transaction);
                     transaction.rollback();
+                    // 其他情况下，超时没处理的事务日志直接删除
                     transactionConfigurator.getTransactionRepository().delete(transaction);
                 }
             } catch (Throwable throwable) {
@@ -100,6 +104,10 @@ public class TransactionRecovery {
         }
     }
 
+    /**
+     * 设置事务配置器.
+     * @param transactionConfigurator
+     */
     public void setTransactionConfigurator(TransactionConfigurator transactionConfigurator) {
         this.transactionConfigurator = transactionConfigurator;
     }

@@ -23,13 +23,26 @@ import java.lang.reflect.Method;
  */
 public class ResourceCoordinatorInterceptor {
 
+    /**
+     * 事务管理器.
+     */
     private TransactionManager transactionManager;
 
+    /**
+     * 设置事务管理器.
+     * @param transactionManager
+     */
     public void setTransactionManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }
 
+    /**
+     * 拦截事务上下文方法.
+     * @param pjp
+     * @throws Throwable
+     */
     public Object interceptTransactionContextMethod(ProceedingJoinPoint pjp) throws Throwable {
+        // 获取当前事务
         Transaction transaction = transactionManager.getCurrentTransaction();
         if (transaction != null) {
             switch (transaction.getStatus()) {

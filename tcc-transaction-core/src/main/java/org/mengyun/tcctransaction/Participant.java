@@ -58,14 +58,14 @@ public class Participant implements Serializable {
     }
 
     /**
-     * 提交事务
+     * 提交参与者事务（在Transaction中被调用）.
      */
     public void commit() {
         terminator.invoke(new TransactionContext(xid, TransactionStatus.CONFIRMING.getId()), confirmInvocationContext, transactionContextEditorClass);
     }
 
     /**
-     * 回滚事务
+     * 回滚参与者事务（在Transaction中被调用）
      */
     public void rollback() {
         terminator.invoke(new TransactionContext(xid, TransactionStatus.CANCELLING.getId()), cancelInvocationContext, transactionContextEditorClass);

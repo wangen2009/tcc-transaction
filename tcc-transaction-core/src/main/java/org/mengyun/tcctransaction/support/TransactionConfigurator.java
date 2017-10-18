@@ -11,9 +11,21 @@ import org.mengyun.tcctransaction.recover.RecoverConfig;
  */
 public interface TransactionConfigurator {
 
+    /**
+     * 获取事务管理器.
+     * @return
+     */
     TransactionManager getTransactionManager();
 
+    /**
+     * 获取事务库.
+     * @return
+     */
     TransactionRepository getTransactionRepository();
 
+    /**
+     * 获取事务恢复配置.
+     * @return
+     */
     RecoverConfig getRecoverConfig();
 }
