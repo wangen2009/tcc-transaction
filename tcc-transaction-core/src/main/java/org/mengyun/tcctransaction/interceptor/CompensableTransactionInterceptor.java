@@ -55,15 +55,21 @@ public class CompensableTransactionInterceptor {
         Compensable compensable = method.getAnnotation(Compensable.class);
         Propagation propagation = compensable.propagation();
         // 获得 事务上下文
-        TransactionContext transactionContext = FactoryBuilder.factoryOf(compensable.transactionContextEditor()).getInstance().get(pjp.getTarget(), method, pjp.getArgs());
+        TransactionContext transactionContext = FactoryBuilder
+                .factoryOf(compensable.transactionContextEditor()).getInstance()
+                .get(pjp.getTarget(), method, pjp.getArgs());
         // 当前线程是否在事务中
         boolean isTransactionActive = transactionManager.isTransactionActive();
         // 判断事务上下文是否合法
-        if (!TransactionUtils.isLegalTransactionContext(isTransactionActive, propagation, transactionContext)) {
-            throw new SystemException("no active compensable transaction while propagation is mandatory for method " + method.getName());
+        if (!TransactionUtils
+                .isLegalTransactionContext(isTransactionActive, propagation, transactionContext)) {
+            throw new SystemException(
+                    "no active compensable transaction while propagation is mandatory for method "
+                    + method.getName());
         }
         // 计算方法类型
-        MethodType methodType = CompensableMethodUtils.calculateMethodType(propagation, isTransactionActive, transactionContext);
+        MethodType methodType = CompensableMethodUtils
+                .calculateMethodType(propagation, isTransactionActive, transactionContext);
         // 处理
         switch (methodType) {
             case ROOT:
@@ -92,7 +98,9 @@ public class CompensableTransactionInterceptor {
             } catch (Throwable tryingException) {
                 if (isDelayCancelException(tryingException)) { // 是否延迟回滚
                 } else {
-                    logger.warn(String.format("compensable transaction trying failed. transaction content:%s", JSON.toJSONString(transaction)), tryingException);
+                    logger.warn(String.format(
+                            "compensable transaction trying failed. transaction content:%s",
+                            JSON.toJSONString(transaction)), tryingException);
                     // 回滚事务
                     transactionManager.rollback();
                 }

@@ -45,10 +45,12 @@ public class TransactionRecovery {
      * @return 异常事务集合
      */
     private List<Transaction> loadErrorTransactions() {
-        TransactionRepository transactionRepository = transactionConfigurator.getTransactionRepository();
+        TransactionRepository transactionRepository = transactionConfigurator
+                .getTransactionRepository();
         long currentTimeInMillis = Calendar.getInstance().getTimeInMillis();
         RecoverConfig recoverConfig = transactionConfigurator.getRecoverConfig();
-        return transactionRepository.findAllUnmodifiedSince(new Date(currentTimeInMillis - recoverConfig.getRecoverDuration() * 1000));
+        return transactionRepository.findAllUnmodifiedSince(
+                new Date(currentTimeInMillis - recoverConfig.getRecoverDuration() * 1000));
     }
 
     /**
@@ -59,15 +61,19 @@ public class TransactionRecovery {
     private void recoverErrorTransactions(List<Transaction> transactions) {
         for (Transaction transaction : transactions) {
             // 超过最大重试次数
-            if (transaction.getRetriedCount() > transactionConfigurator.getRecoverConfig().getMaxRetryCount()) {
-                logger.error(String.format("recover failed with max retry count,will not try again. txid:%s, status:%s,retried count:%d,transaction content:%s", transaction.getXid(), transaction.getStatus().getId(), transaction.getRetriedCount(), JSON.toJSONString(transaction)));
+            if (transaction.getRetriedCount() > transactionConfigurator.getRecoverConfig()
+                    .getMaxRetryCount()) {
+                logger.error(String.format(
+                        "recover failed with max retry count,will not try again. txid:%s, status:%s,retried count:%d,transaction content:%s",
+                        transaction.getXid(), transaction.getStatus().getId(),
+                        transaction.getRetriedCount(), JSON.toJSONString(transaction)));
                 continue;
             }
             // 分支事务超过最大可重试时间
-            if (transaction.getTransactionType().equals(TransactionType.BRANCH)
-                    && (transaction.getCreateTime().getTime() +
-                    transactionConfigurator.getRecoverConfig().getMaxRetryCount() *
-                            transactionConfigurator.getRecoverConfig().getRecoverDuration() * 1000
+            if (transaction.getTransactionType().equals(TransactionType.BRANCH) && (
+                    transaction.getCreateTime().getTime()
+                    + transactionConfigurator.getRecoverConfig().getMaxRetryCount() *
+                      transactionConfigurator.getRecoverConfig().getRecoverDuration() * 1000
                     > System.currentTimeMillis())) {
                 continue;
             }
@@ -83,9 +89,10 @@ public class TransactionRecovery {
                     transaction.commit();
                     // 其他情况下，超时没处理的事务日志直接删除
                     transactionConfigurator.getTransactionRepository().delete(transaction);
-                // Cancel
+                    // Cancel
                 } else if (transaction.getStatus().equals(TransactionStatus.CANCELLING)
-                        || transaction.getTransactionType().equals(TransactionType.ROOT)) { // 处理延迟取消的情况
+                           || transaction.getTransactionType()
+                                   .equals(TransactionType.ROOT)) { // 处理延迟取消的情况
                     // 其他情况，把事务状态改为CANCELLING(3)，然后执行回滚
                     transaction.changeStatus(TransactionStatus.CANCELLING);
                     transactionConfigurator.getTransactionRepository().update(transaction);
@@ -94,11 +101,19 @@ public class TransactionRecovery {
                     transactionConfigurator.getTransactionRepository().delete(transaction);
                 }
             } catch (Throwable throwable) {
-                if (throwable instanceof OptimisticLockException
-                        || ExceptionUtils.getRootCause(throwable) instanceof OptimisticLockException) {
-                    logger.warn(String.format("optimisticLockException happened while recover. txid:%s, status:%s,retried count:%d,transaction content:%s", transaction.getXid(), transaction.getStatus().getId(), transaction.getRetriedCount(), JSON.toJSONString(transaction)), throwable);
+                if (throwable instanceof OptimisticLockException || ExceptionUtils
+                        .getRootCause(throwable) instanceof OptimisticLockException) {
+                    logger.warn(String.format(
+                            "optimisticLockException happened while recover. txid:%s, status:%s,retried count:%d,transaction content:%s",
+                            transaction.getXid(), transaction.getStatus().getId(),
+                            transaction.getRetriedCount(), JSON.toJSONString(transaction)),
+                            throwable);
                 } else {
-                    logger.error(String.format("recover failed, txid:%s, status:%s,retried count:%d,transaction content:%s", transaction.getXid(), transaction.getStatus().getId(), transaction.getRetriedCount(), JSON.toJSONString(transaction)), throwable);
+                    logger.error(String.format(
+                            "recover failed, txid:%s, status:%s,retried count:%d,transaction content:%s",
+                            transaction.getXid(), transaction.getStatus().getId(),
+                            transaction.getRetriedCount(), JSON.toJSONString(transaction)),
+                            throwable);
                 }
             }
         }

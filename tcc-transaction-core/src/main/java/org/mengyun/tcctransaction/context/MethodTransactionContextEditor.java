@@ -13,21 +13,22 @@ import java.lang.reflect.Method;
 @Deprecated
 public class MethodTransactionContextEditor implements TransactionContextEditor {
 
-    @Override
-    public TransactionContext get(Object target, Method method, Object[] args) {
-        int position = CompensableMethodUtils.getTransactionContextParamPosition(method.getParameterTypes());
+    @Override public TransactionContext get(Object target, Method method, Object[] args) {
+        int position = CompensableMethodUtils
+                .getTransactionContextParamPosition(method.getParameterTypes());
 
         if (position >= 0) {
             return (TransactionContext) args[position];
         }
-        
+
         return null;
     }
 
-    @Override
-    public void set(TransactionContext transactionContext, Object target, Method method, Object[] args) {
+    @Override public void set(TransactionContext transactionContext, Object target, Method method,
+                              Object[] args) {
 
-        int position = CompensableMethodUtils.getTransactionContextParamPosition(method.getParameterTypes());
+        int position = CompensableMethodUtils
+                .getTransactionContextParamPosition(method.getParameterTypes());
         if (position >= 0) {
             args[position] = transactionContext;
         }
